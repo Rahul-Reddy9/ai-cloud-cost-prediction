@@ -1,0 +1,4 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: autoscale-test        # dedicated test namespace - never run the experiment in production namespaces

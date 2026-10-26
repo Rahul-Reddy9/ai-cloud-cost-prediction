@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-web-app
+  namespace: autoscale-test
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: sample-web-app}
+  template:
+    metadata:
+      labels: {app: sample-web-app}
+    spec:
+      containers:
+        - name: web
+          image: registry.k8s.io/hpa-example      # CPU-burning demo image from the Kubernetes HPA walkthrough
+          ports: [{containerPort: 80}]
+          resources:
+            requests: {cpu: 200m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          readinessProbe:
+            httpGet: {path: /, port: 80}
+            initialDelaySeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-web-app
+  namespace: autoscale-test
+spec:
+  selector: {app: sample-web-app}
+  ports: [{port: 80, targetPort: 80}]

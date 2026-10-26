@@ -1,0 +1,19 @@
+# Part C: Isolation Forest
+raw_features: [request_rate, cpu_utilization, memory_utilization, latency_ms]
+residual_features: [resid_scaled, resid_z]
+isolation_forest:
+  n_estimators: 200
+  max_samples: 256
+  contamination: auto
+  random_state: 42
+# Raw detector is fitted on NORMAL training observations (label==0 when labels exist).
+# Residual detector is fitted on NORMAL *validation* residuals, because training-period TFT
+# residuals are in-sample and therefore optimistic. Neither detector ever sees the test split.
+fit_splits: {raw: train, residual: validation}
+threshold:
+  method: max_f1_on_validation      # chosen on validation labels only
+  fallback_quantile: 0.99
+score_normalisation: {low_quantile: 0.5, high_quantile: 0.995}
+paths:
+  model_dir: models/anomaly
+  scores_file: data/processed/anomaly_scores.parquet

@@ -1,0 +1,46 @@
+# Environments and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+lightning_logs/
+.streamlit/secrets.toml
+
+# Secrets / private configuration
+.env
+*.pem
+*.key
+kubeconfig*
+credentials*
+
+# Large datasets and generated artefacts (keep folder placeholders and the small sample)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+models/**/*.ckpt
+models/**/*.zip
+models/**/*.pt
+models/**/*.pkl
+models/**/*.joblib
+!models/**/.gitkeep
+results/logs/*
+!results/logs/.gitkeep
+
+# Additional generated files
+.env.*
+!.env.example
+*.parquet
+*.csv
+*.db
+*.sqlite3
+*.log
+.DS_Store
+Thumbs.db
+
+# Generated experiment artifacts
+results/figures/
+results/metrics/
+models/

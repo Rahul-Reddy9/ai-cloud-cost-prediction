@@ -1,0 +1,33 @@
+# Part G: experiment system
+profiles:
+  quick:                    # what was run in the build sandbox (1 CPU core)
+    seeds: [0, 1, 2]
+    total_timesteps: 150000
+  full:                     # recommended on a normal workstation
+    seeds: [0, 1, 2, 3, 4]
+    total_timesteps: 300000
+evaluation:
+  split: test
+  provisioning_delays: [0, 1, 3, 6]   # delay-sensitivity test (controllers are trained with delay_steps)
+  cost_reduction_baseline: reactive
+baselines:
+  fixed: {sizing_quantile: 0.95, target_util: 0.7}      # sized on TRAIN demand only
+  fixed_peak: {target_util: 0.7}
+  reactive:
+    grid:
+      target_util: [0.5, 0.6, 0.7, 0.8]
+      tolerance: [0.1]
+      scale_down_stabilization_steps: [3, 6, 12]
+  predictive:
+    grid:
+      target_util: [0.6, 0.7, 0.8]
+      scale_down_stabilization_steps: [3, 6]
+  predictive_q:
+    grid:
+      target_util: [0.6, 0.7, 0.8]
+      scale_down_stabilization_steps: [3, 6]
+tuning_split: validation            # baselines are tuned on validation, never on test
+outputs:
+  metrics_dir: results/metrics
+  figures_dir: results/figures
+  logs_dir: results/logs

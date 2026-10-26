@@ -1,0 +1,76 @@
+# Data pipeline configuration (Part A)
+dataset:
+  name: synthetic_cloud_workload
+  # "synthetic": generate a labelled synthetic trace (used when no real trace is available offline).
+  # "csv": load data/raw/<raw_file> (CSV or Parquet) and map its columns onto the internal schema.
+  source: synthetic
+  raw_file: workload.csv
+  processed_file: workload.parquet
+  interval_minutes: 5
+  service_column: service_id       # one time series per service / workload
+  # Map source column names -> internal schema names (only used for source: csv), e.g.
+  #   column_map: {ts: timestamp, cpu: cpu_utilization, rps: request_rate}
+  column_map: {}
+
+schema:
+  required: [timestamp, request_rate]
+  optional: [cpu_utilization, memory_utilization, latency_ms, replica_count,
+             pending_replicas, resource_cost, anomaly_label]
+  bounded_0_1: [cpu_utilization, memory_utilization]
+  non_negative: [request_rate, latency_ms, replica_count, pending_replicas, resource_cost]
+
+synthetic:                           # SYNTHETIC data: documented assumptions, not a real trace
+  n_services: 5
+  n_days: 40
+  seed: 7
+  base_rate_rps: 330.0               # mean demand of a scale-1.0 service (req/s)
+  service_scales: [1.0, 0.8, 1.2, 0.9, 1.1]
+  service_phase_hours: [0.0, 1.5, -1.0, 2.5, -2.0]
+  daily_amplitude: 0.45
+  second_harmonic: 0.12
+  weekend_factor: 0.75
+  trend_per_30_days: 0.10
+  noise_ar: 0.85                     # AR(1) multiplicative noise
+  noise_sigma: 0.035
+  # Genuine "normal" traffic events (NOT labelled anomalies): short promotional bursts
+  events_per_week: 1.5
+  event_magnitude: [1.2, 1.5]
+  event_duration_steps: [6, 18]
+  # Labelled anomalies (synthetic, injected, ground truth known)
+  anomalies:
+    per_day: 1.2
+    types: [surge, drop, latency_spike, cpu_saturation]
+    surge_magnitude: [1.8, 3.0]
+    drop_magnitude: [0.05, 0.3]
+    duration_steps: [3, 8]
+    latency_multiplier: [4.0, 8.0]
+    cpu_additive: [0.3, 0.5]
+  # Telemetry gaps to exercise validation / cleaning (never treated as zero usage)
+  missing_timestamp_fraction: 0.003
+  nan_value_fraction: 0.002
+  logging_policy:                    # simple threshold rule that "operated" the cluster while logging
+    target_util: 0.65
+    max_step: 3
+
+# Explicit price model used when the source has no resource_cost column.
+price_model:
+  currency: USD
+  price_per_replica_hour: 0.05
+  billing_interval_minutes: 5
+  price_source: "Illustrative on-demand-like price for a small 2-vCPU/4-GB container replica (assumption, not an invoice)"
+  assumptions: "Pending (starting) replicas are billed; replicas are billed per interval actually allocated; no discounts, egress, storage or node packing."
+
+cleaning:
+  max_gap_steps: 6                   # linear-interpolate gaps up to 30 min; longer gaps start a new segment
+  drop_duplicate_timestamps: keep_last
+  never_fill_with_zero: true
+
+split:
+  train: 0.70
+  validation: 0.15
+  test: 0.15
+
+features:
+  rolling_window_steps: 12
+  calendar: [hour_sin, hour_cos, dow_sin, dow_cos]
+  scale_columns: [request_rate, cpu_utilization, memory_utilization, latency_ms]
