@@ -244,6 +244,25 @@ else:
     if p.exists():
         st.subheader("Exp 4 - delay sensitivity"); st.dataframe(pd.read_csv(p))
     m = R("results/metrics/experiments_manifest.json")
-    if m.exists():
-        st.json(json.load(open(m)))
-    st.caption("PPO rows report mean ± std over random seeds in the CSV (columns *_std); all seeds are kept in all_runs.csv.")
+m = R("results/metrics/experiments_manifest.json")
+if m.exists():
+    with open(m, "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+
+    st.subheader("Experiment configuration")
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Default delay", f"{manifest.get('default_delay', 'N/A')} steps")
+    c2.metric("PPO timesteps", f"{manifest.get('ppo_total_timesteps', 0):,}")
+    c3.metric("Profile", manifest.get("profile", "N/A"))
+
+    st.write("**Provisioning delays:**", manifest.get("delays_evaluated", []))
+    st.write("**Random seeds:**", manifest.get("seeds", []))
+
+    if manifest.get("wall_seconds") is not None:
+        st.write(f"**Runtime:** {manifest['wall_seconds'] / 60:.1f} minutes")
+
+st.caption(
+    "PPO results report mean ± standard deviation over random seeds where available. "
+    "All seeds are retained in all_runs.csv."
+)
