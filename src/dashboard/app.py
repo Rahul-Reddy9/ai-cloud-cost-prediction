@@ -73,25 +73,126 @@ if page == PAGES[0]:
 
 elif page == PAGES[1]:
     st.header("Anomaly monitoring (Isolation Forest)")
-    if need("data/processed/anomaly_scores.parquet", "Run `python -m src.anomaly.train_detector`."):
+
+    if need("data/processed/anomaly_scores.parquet",
+             "Run `python -m src.anomaly.train_detector`."):
+
         s = pd.read_parquet(R("data/processed/anomaly_scores.parquet"))
+
         c1, c2 = st.columns(2)
         sp = c1.selectbox("Split", ["test", "validation", "train"])
         g = c2.selectbox("Segment", sorted(s["group_id"].unique()))
-        x = s[(s.split == sp) & (s.group_id == g)].sort_values("time_idx").iloc[:800]
-        fig, ax = plt.subplots(figsize=(11, 3.5))
-        ax.plot(x["timestamp"], x["z_raw"], lw=0.8, label="raw-metric score")
-        if x["z_resid"].notna().any():
-            ax.plot(x["timestamp"], x["z_resid"], lw=0.8, label="forecast-residual score")
-        if "anomaly_label" in x:
-            for t in x.loc[x["anomaly_label"] == 1, "timestamp"]:
-                ax.axvspan(t, t + pd.Timedelta(minutes=5), color="r", alpha=0.15, lw=0)
-        ax.legend(); ax.set_ylabel("normalised score"); st.pyplot(fig)
-        st.caption("Red bands = SYNTHETIC injected anomaly labels.")
-        if R("results/metrics/detector_eval.json").exists():
-            j = json.load(open(R("results/metrics/detector_eval.json")))
-            st.dataframe(pd.DataFrame({k: j[k] for k in ("raw_metrics", "forecast_residuals", "union_of_both")}).drop(
-                index=["recall_by_type"], errors="ignore").T)
+
+        x = s[(s["split"] == sp) & (s["group_id"] == g)]
+        x = x.sort_values("time_idx").iloc[:800].copy()
+
+        if x.empty:
+            st.warning("No data available for this split and segment.")
+        else:
+            # Summary
+            st.subheader("Anomaly summary")
+
+            if "anomaly_label" in x.columns:
+                labels = x["anomaly_label"].fillna(0).astype(int)
+                anomaly_count = int(labels.eq(1).sum())
+                anomaly_share = labels.eq(1).mean()
+            else:
+                labels = None
+                anomaly_count = 0
+                anomaly_share = 0.0
+
+            a, b, c = st.columns(3)
+            a.metric("Data points analysed", f"{len(x):,}")
+            b.metric("Synthetic anomaly labels", f"{anomaly_count:,}")
+            c.metric("Labelled anomaly share", f"{anomaly_share:.1%}")
+
+            # Chart
+            st.subheader("Anomaly scores")
+
+            fig, ax = plt.subplots(figsize=(11, 3.5))
+            ax.plot(
+                x["timestamp"], x["z_raw"],
+                lw=0.8, label="Raw-metric score"
+            )
+
+            if x["z_resid"].notna().any():
+                ax.plot(
+                    x["timestamp"], x["z_resid"],
+                    lw=0.8, label="Forecast-residual score"
+                )
+
+            if labels is not None:
+                for t in x.loc[labels.eq(1), "timestamp"]:
+                    ax.axvspan(
+                        t,
+                        t + pd.Timedelta(minutes=5),
+                        color="red",
+                        alpha=0.15,
+                        lw=0
+                    )
+
+            ax.legend()
+            ax.set_ylabel("Normalised score")
+            ax.set_xlabel("Timestamp")
+            fig.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
+
+            st.caption(
+                "Red bands show SYNTHETIC injected anomaly labels. "
+                "They do not establish real production incidents."
+            )
+
+            # Evaluation metrics
+            st.subheader("Detector evaluation")
+
+            eval_path = R("results/metrics/detector_eval.json")
+
+            if eval_path.exists():
+                with open(eval_path, "r", encoding="utf-8") as f:
+                    evaluation = json.load(f)
+
+                rows = []
+                for key, label in [
+                    ("raw_metrics", "Raw metrics"),
+                    ("forecast_residuals", "Forecast residuals"),
+                    ("union_of_both", "Union of both"),
+                ]:
+                    values = evaluation.get(key, {})
+                    rows.append({
+                        "Detector": label,
+                        "Precision": values.get("precision"),
+                        "Recall": values.get("recall"),
+                        "F1 Score": values.get("f1"),
+                        "False Positive Rate": values.get("fpr"),
+                        "AUROC": values.get("auroc"),
+                        "True Positives": values.get("tp"),
+                        "False Positives": values.get("fp"),
+                        "False Negatives": values.get("fn"),
+                    })
+
+                evaluation_df = pd.DataFrame(rows)
+                numeric_cols = [
+                    "Precision", "Recall", "F1 Score",
+                    "False Positive Rate", "AUROC"
+                ]
+                evaluation_df[numeric_cols] = evaluation_df[numeric_cols].round(3)
+
+                st.dataframe(evaluation_df, hide_index=True, width="stretch")
+
+                st.caption(
+                    f"Evaluation split: {evaluation.get('split', 'unknown')} | "
+                    f"Samples: {evaluation.get('n', 0):,} | "
+                    f"Synthetic anomalies: {evaluation.get('n_anomalous', 0):,}"
+                )
+
+                st.info(
+                    "These metrics use synthetic anomaly labels and do not "
+                    "establish real-world production detection performance."
+                )
+            else:
+                st.warning("Detector evaluation file not found.")
+
 
 elif page == PAGES[2]:
     st.header("Resource allocation (replicas, capacity, scaling actions, provisioning delay)")
