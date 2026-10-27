@@ -1,0 +1,52 @@
+{
+  "forecast_residuals": {
+    "auroc": 0.7370159255956172,
+    "average_precision": 0.4197230695651198,
+    "f1": 0.5688487584650113,
+    "fn": 109,
+    "fp": 82,
+    "fpr": 0.009820359281437126,
+    "precision": 0.6057692307692307,
+    "recall": 0.5361702127659574,
+    "recall_by_type": {
+      "cpu_saturation": 0.0,
+      "drop": 1.0,
+      "latency_spike": 0.0,
+      "surge": 0.9411764705882353
+    },
+    "tn": 8268,
+    "tp": 126
+  },
+  "labels_are_synthetic": true,
+  "n": 8585,
+  "n_anomalous": 235,
+  "raw_metrics": {
+    "auroc": 0.9645407058223977,
+    "average_precision": 0.47068039117705196,
+    "f1": 0.5127020785219398,
+    "fn": 124,
+    "fp": 87,
+    "fpr": 0.010419161676646707,
+    "precision": 0.5606060606060606,
+    "recall": 0.4723404255319149,
+    "recall_by_type": {
+      "cpu_saturation": 0.0,
+      "drop": 0.8548387096774194,
+      "latency_spike": 0.0,
+      "surge": 0.8529411764705882
+    },
+    "tn": 8263,
+    "tp": 111
+  },
+  "split": "test",
+  "union_of_both": {
+    "f1": 0.48940269749518306,
+    "fn": 108,
+    "fp": 157,
+    "fpr": 0.01880239520958084,
+    "precision": 0.4471830985915493,
+    "recall": 0.5404255319148936,
+    "tn": 8193,
+    "tp": 127
+  }
+}
