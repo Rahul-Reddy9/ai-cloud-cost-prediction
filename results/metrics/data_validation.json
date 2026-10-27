@@ -1,0 +1,27 @@
+{
+  "errors": [],
+  "ok": true,
+  "stats": {
+    "max_gap_minutes": 10.0,
+    "n_bad_timestamps": 0,
+    "n_duplicate_timestamps": 0,
+    "n_gaps": 142,
+    "n_irregular_steps": 142,
+    "n_non_monotonic": 0,
+    "n_rows": 57458,
+    "nan_counts": {
+      "anomaly_label": 0,
+      "cpu_utilization": 120,
+      "latency_ms": 0,
+      "memory_utilization": 0,
+      "pending_replicas": 0,
+      "replica_count": 0,
+      "request_rate": 0,
+      "resource_cost": 0
+    }
+  },
+  "warnings": [
+    "142 gaps larger than the 0 days 00:05:00 sampling interval (longest 0 days 00:10:00); short gaps are interpolated, long gaps split segments",
+    "120 missing values in 'cpu_utilization' (never treated as zero)"
+  ]
+}

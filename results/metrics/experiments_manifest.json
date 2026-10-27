@@ -1,0 +1,17 @@
+{
+  "default_delay": 3,
+  "delays_evaluated": [
+    0,
+    1,
+    3,
+    6
+  ],
+  "ppo_total_timesteps": 150000,
+  "profile": "quick",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "wall_seconds": 967.1504707336426
+}
